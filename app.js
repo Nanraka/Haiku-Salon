@@ -190,18 +190,94 @@ async function loadRoom(roomId) {
   });
   return true;
 }
+
 async function renderRoom(roomId) {
-  if (!roomId) { go("home"); return; }
+  if (!roomId) {
+    go("home");
+    return;
+  }
+
   try {
     const loaded = await loadRoom(roomId);
     if (!loaded) return;
+
     document.title = `${currentRoom.name} - Haiku Salon`;
-    const haikus = roomHaikus.filter(h => !h.parentId).slice().reverse();
-    app().innerHTML = layout(`<header class="room-header"><div class="topbar"><div><div class="room-title"><h1>${escapeHtml(currentRoom.name)}</h1><span class="chevron">⌄</span></div><div class="room-meta">${roomParticipants.length}人が参加中</div></div>
-      <button class="icon-button" onclick="showParticipants()" aria-label="参加者">♧</button></div></header>
-      <section class="feed">${haikus.length ? haikus.map(renderHaikuCard).join("") : `<div class="form-card" style="text-align:center"><div class="brand" style="font-size:1.2rem">まだ俳句がありません。</div><p class="muted">思いついたら、最初の一句を置いてみましょう。</p></div>`}</section>
-      <button class="fab" onclick="go('post','${roomId}')">＋　俳句を投稿する</button>`);
-  } catch (error) { app().innerHTML = layout(`<div class="topbar"><button class="back" onclick="go('home')">‹　ホームへ</button></div><h1 class="page-title">部屋を開けませんでした</h1><p class="notice">${escapeHtml(friendlyError(error))}</p>`); }
+
+    const haikus = roomHaikus
+      .filter(h => !h.parentId)
+      .slice()
+      .reverse();
+
+    // この部屋の共有URLを生成
+    const shareUrl =
+      `${location.origin}${location.pathname}#/room/${currentRoom.id}`;
+
+    app().innerHTML = layout(`
+      <header class="room-header">
+        <div class="topbar">
+          <div>
+            <div class="room-title">
+              <h1>${escapeHtml(currentRoom.name)}</h1>
+              <span class="chevron">⌄</span>
+            </div>
+            <div class="room-meta">
+              ${roomParticipants.length}人が参加中
+            </div>
+          </div>
+
+          <button
+            class="icon-button"
+            onclick="showParticipants()"
+            aria-label="参加者"
+          >♧</button>
+        </div>
+
+        <div class="share-box">
+          <div class="muted">この部屋の共有URL</div>
+          <div class="share-url">
+            <input
+              id="shareUrl"
+              readonly
+              value="${escapeHtml(shareUrl)}"
+            >
+            <button class="copy" onclick="copyUrl()">コピー</button>
+          </div>
+        </div>
+      </header>
+
+      <section class="feed">
+        ${
+          haikus.length
+            ? haikus.map(renderHaikuCard).join("")
+            : `
+              <div class="form-card" style="text-align:center">
+                <div class="brand" style="font-size:1.2rem">
+                  まだ俳句がありません。
+                </div>
+                <p class="muted">
+                  思いついたら、最初の一句を置いてみましょう。
+                </p>
+              </div>
+            `
+        }
+      </section>
+
+      <button class="fab" onclick="go('post','${roomId}')">
+        ＋　俳句を投稿する
+      </button>
+    `);
+
+  } catch (error) {
+    app().innerHTML = layout(`
+      <div class="topbar">
+        <button class="back" onclick="go('home')">
+          ‹　ホームへ
+        </button>
+      </div>
+      <h1 class="page-title">部屋を開けませんでした</h1>
+      <p class="notice">${escapeHtml(friendlyError(error))}</p>
+    `);
+  }
 }
 function renderHaikuCard(h) {
   const replyCount = roomHaikus.filter(x => x.parentId === h.id).length;
