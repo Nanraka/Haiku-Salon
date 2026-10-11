@@ -162,7 +162,8 @@ async function joinRoom() {
       if (error) throw error;
       participant = data;
     }
-    go("room", roomId);
+    location.hash = `/room/${roomId}`;
+    location.reload();
   });
 }
 async function loadRoom(roomId) {
